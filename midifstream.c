@@ -41,7 +41,7 @@ MfStream *Mf_OpenStream(MfFile *of)
     return ret;
 }
 
-/* start a stream at this timestamp */
+/* start a stream at this timestamp, only necessary for time-based reading */
 PmError Mf_StartStream(MfStream *stream, PtTimestamp timestamp)
 {
     Mf_StreamSetTempo(stream, timestamp, 0, 0, 500000); /* 120BPM */
