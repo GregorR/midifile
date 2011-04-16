@@ -53,10 +53,14 @@ MfFile *Mf_CloseStream(MfStream *stream);
 /* poll for events from the stream */
 PmError Mf_StreamPoll(MfStream *stream);
 
+/* what's the tick of the next event on the stream? */
+uint32_t Mf_StreamNext(MfStream *stream);
+
 /* is the stream empty? */
 PmError Mf_StreamEmpty(MfStream *stream);
 
 /* read events from the stream (loses ownership of events) */
+int Mf_StreamReadUntil(MfStream *stream, MfEvent **into, int *track, int32_t length, uint32_t maxTm);
 int Mf_StreamRead(MfStream *stream, MfEvent **into, int *track, int32_t length);
 int Mf_StreamReadNormal(MfStream *stream, MfEvent **into, int *track, int32_t length);
 
@@ -72,6 +76,9 @@ uint32_t Mf_StreamGetTick(MfStream *stream, PtTimestamp timestamp);
 
 /* get a timestamp from this filestream at a given tick */
 PtTimestamp Mf_StreamGetTimestamp(MfStream *stream, int *us, uint32_t tick);
+
+/* update all tempo info for this filestream */
+PmError Mf_StreamSetTempo(MfStream *stream, PtTimestamp ts, int us, uint32_t tick, uint32_t tempo);
 
 /* update the tempo for this filestream at a tick, writes the timestamp of the update into ts */
 PmError Mf_StreamSetTempoTick(MfStream *stream, PtTimestamp *ts, uint32_t tick, uint32_t tempo);

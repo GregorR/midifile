@@ -44,10 +44,7 @@ MfStream *Mf_OpenStream(MfFile *of)
 /* start a stream at this timestamp */
 PmError Mf_StartStream(MfStream *stream, PtTimestamp timestamp)
 {
-    stream->tempoTs = timestamp;
-    stream->tempoUs = 0;
-    stream->tempoTick = 0;
-    stream->tempo = 500000; /* 120BPM = 500K us/qn */
+    Mf_StreamSetTempo(stream, timestamp, 0, 0, 500000); /* 120BPM */
     return pmNoError;
 }
 
@@ -114,43 +111,55 @@ PmError Mf_StreamPoll(MfStream *stream)
     return FALSE;
 }
 
-/* is the stream empty? */
-PmError Mf_StreamEmpty(MfStream *stream)
+/* what's the tick of the next event on the stream? */
+uint32_t Mf_StreamNext(MfStream *stream)
 {
+    uint32_t next = (uint32_t) -1;
     int i;
     MfFile *file;
     MfTrack *track;
+    MfEvent *event;
 
     file = stream->file;
     for (i = 0; i < file->trackCt; i++) {
         track = file->tracks[i];
-        if (track->head) return FALSE;
+        event = track->head;
+        if (event && event->absoluteTm < next) next = event->absoluteTm;
     }
 
-    return TRUE;
+    return next;
+}
+
+/* is the stream empty? */
+PmError Mf_StreamEmpty(MfStream *stream)
+{
+    if (Mf_StreamNext(stream) == (uint32_t) -1) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
 }
 
 /* read events from the stream (loses ownership of events) */
-int Mf_StreamRead(MfStream *stream, MfEvent **into, int *ptrack, int32_t length)
+int Mf_StreamReadUntil(MfStream *stream, MfEvent **into, int *ptrack, int32_t length, uint32_t maxTm)
 {
     int rd = 0, i;
     MfFile *file;
     MfTrack *track;
-    uint32_t curTick;
-
-    /* calculate the current tick */
-    curTick = Mf_StreamGetTick(stream, Pt_Time());
+    MfEvent *event;
 
     file = stream->file;
     for (i = 0; i < file->trackCt; i++) {
         track = file->tracks[i];
-        if (track->head && track->head->absoluteTm <= curTick) {
+        event = track->head;
+        if (event && event->absoluteTm <= maxTm) {
             /* read in this one */
-            into[rd] = track->head;
+            into[rd] = event;
             ptrack[rd] = i;
-            track->head->e.timestamp = Mf_StreamGetTimestamp(stream, NULL, track->head->absoluteTm);
-            track->head = track->head->next;
+            event->e.timestamp = Mf_StreamGetTimestamp(stream, NULL, track->head->absoluteTm);
+            track->head = event->next;
             if (!(track->head)) track->tail = NULL;
+            event->next = NULL;
             rd++;
 
             /* stop if we're out of room */
@@ -159,6 +168,16 @@ int Mf_StreamRead(MfStream *stream, MfEvent **into, int *ptrack, int32_t length)
     }
 
     return rd;
+}
+
+int Mf_StreamRead(MfStream *stream, MfEvent **into, int *ptrack, int32_t length)
+{
+    uint32_t curTick;
+
+    /* calculate the current tick */
+    curTick = Mf_StreamGetTick(stream, Pt_Time());
+
+    return Mf_StreamReadUntil(stream, into, ptrack, length, curTick);
 }
 
 int Mf_StreamReadNormal(MfStream *stream, MfEvent **into, int *ptrack, int32_t length)
@@ -275,6 +294,16 @@ PtTimestamp Mf_StreamGetTimestamp(MfStream *stream, int *us, uint32_t tick)
     tsbase /= 1000;
 
     return tsbase;
+}
+
+/* update all tempo info for this filestream */
+PmError Mf_StreamSetTempo(MfStream *stream, PtTimestamp ts, int us, uint32_t tick, uint32_t tempo)
+{
+    stream->tempoTs = ts;
+    stream->tempoUs = us;
+    stream->tempoTick = tick;
+    stream->tempo = tempo;
+    return pmNoError;
 }
 
 /* update the tempo for this filestream at a tick, writes the timestamp of the update into ts */
