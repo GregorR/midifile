@@ -28,8 +28,6 @@
     PTCHECK(perr); \
 } while (0)
 
-#define MIDI_M_TEMPO 0x51
-
 MfStream *stream = NULL;
 PortMidiStream *ostream = NULL;
 int ready = 0;
@@ -126,23 +124,9 @@ void play(PtTimestamp timestamp, void *ignore)
 
     if (!ready) return;
 
-    while (Mf_StreamRead(stream, &event, &track, 1) == 1) {
+    while (Mf_StreamReadNormal(stream, &event, &track, 1) == 1) {
         ev = event->e;
-
-        if (event->meta) {
-            if (event->meta->type == MIDI_M_TEMPO && event->meta->length == 3) {
-                /* send the tempo change back */
-                PtTimestamp ts;
-                unsigned char *data = event->meta->data;
-                uint32_t tempo = (data[0] << 16) +
-                    (data[1] << 8) +
-                     data[2];
-                Mf_StreamSetTempoTick(stream, &ts, event->absoluteTm, tempo);
-            }
-        } else {
-            Pm_WriteShort(ostream, 0, ev.message);
-        }
-
+        Pm_WriteShort(ostream, 0, ev.message);
         Mf_FreeEvent(event);
     }
 

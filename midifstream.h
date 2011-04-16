@@ -36,6 +36,7 @@ PmError Mf_StreamEmpty(MfStream *stream);
 
 /* read events from the stream (loses ownership of events) */
 int Mf_StreamRead(MfStream *stream, MfEvent **into, int *track, int32_t length);
+int Mf_StreamReadNormal(MfStream *stream, MfEvent **into, int *track, int32_t length);
 
 /* write events into the stream (takes ownership of events) */
 PmError Mf_StreamWrite(MfStream *stream, int track, MfEvent **events, int32_t length);

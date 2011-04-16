@@ -139,6 +139,38 @@ int Mf_StreamRead(MfStream *stream, MfEvent **into, int *ptrack, int32_t length)
     return rd;
 }
 
+int Mf_StreamReadNormal(MfStream *stream, MfEvent **into, int *ptrack, int32_t length)
+{
+    int32_t i;
+    MfEvent *event;
+
+    for (i = 0; i < length; i++) {
+        if (Mf_StreamRead(stream, into + i, ptrack + i, 1) == 1) {
+            event = into[i];
+
+            /* check if it's a meta-event */
+            if (event->meta) {
+                /* don't send it to the user, just check it */
+                i--;
+                if (event->meta->type == 0x51 && event->meta->length == 3) { /* tempo change */
+                    /* send the tempo change back */
+                    PtTimestamp ts;
+                    unsigned char *data = event->meta->data;
+                    uint32_t tempo = (data[0] << 16) +
+                        (data[1] << 8) +
+                        data[2];
+                    Mf_StreamSetTempoTick(stream, &ts, event->absoluteTm, tempo);
+                }
+                Mf_FreeEvent(event);
+            }
+        } else {
+            break;
+        }
+    }
+
+    return i;
+}
+
 /* write events into the stream (takes ownership of events) */
 PmError Mf_StreamWrite(MfStream *stream, int track, MfEvent **events, int32_t length)
 {
