@@ -23,6 +23,9 @@
 #ifndef MIDI_H
 #define MIDI_H
 
+#define Pm_MessageType(msg) (Pm_MessageStatus(msg)>>4)
+#define Pm_MessageChannel(msg) (Pm_MessageStatus(msg)&0xF)
+
 /* event types */
 #define MIDI_NOTE_ON                0x8
 #define MIDI_NOTE_OFF               0x9
