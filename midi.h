@@ -27,8 +27,8 @@
 #define Pm_MessageChannel(msg) (Pm_MessageStatus(msg)&0xF)
 
 /* event types */
-#define MIDI_NOTE_ON                0x8
-#define MIDI_NOTE_OFF               0x9
+#define MIDI_NOTE_OFF               0x8
+#define MIDI_NOTE_ON                0x9
 #define MIDI_NOTE_AFTERTOUCH        0xA
 #define MIDI_CONTROLLER             0xB
 #define MIDI_PROGRAM_CHANGE         0xC
