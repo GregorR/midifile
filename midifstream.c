@@ -152,7 +152,7 @@ int Mf_StreamReadUntil(MfStream *stream, MfEvent **into, int *ptrack, int32_t le
     for (i = 0; i < file->trackCt; i++) {
         track = file->tracks[i];
         event = track->head;
-        if (event && event->absoluteTm <= maxTm) {
+        while (event && event->absoluteTm <= maxTm) {
             /* read in this one */
             into[rd] = event;
             ptrack[rd] = i;
@@ -163,7 +163,12 @@ int Mf_StreamReadUntil(MfStream *stream, MfEvent **into, int *ptrack, int32_t le
             rd++;
 
             /* stop if we're out of room */
-            if (rd >= length) break;
+            if (rd >= length) {
+                i = file->trackCt;
+                break;
+            }
+
+            event = track->head;
         }
     }
 

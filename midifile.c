@@ -199,6 +199,7 @@ void Mf_PushEvent(MfTrack *track, MfEvent *event)
         track->head = track->tail = event;
         event->absoluteTm = event->deltaTm;
     }
+    event->next = NULL;
 }
 
 void Mf_PushEventHead(MfTrack *track, MfEvent *event)
@@ -207,6 +208,7 @@ void Mf_PushEventHead(MfTrack *track, MfEvent *event)
         event->next = track->head;
         track->head = event;
     } else {
+        event->next = NULL;
         track->head = track->tail = event;
     }
 }
