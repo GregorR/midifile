@@ -66,6 +66,7 @@ struct __MfEvent {
 void Mf_FreeEvent(MfEvent *event);
 MfEvent *Mf_NewEvent(void);
 void Mf_PushEvent(MfTrack *track, MfEvent *event);
+void Mf_PushEventHead(MfTrack *track, MfEvent *event);
 
 /* meta-events have extra fields */
 struct __MfMeta {

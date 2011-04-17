@@ -201,6 +201,16 @@ void Mf_PushEvent(MfTrack *track, MfEvent *event)
     }
 }
 
+void Mf_PushEventHead(MfTrack *track, MfEvent *event)
+{
+    if (track->head) {
+        event->next = track->head;
+        track->head = event;
+    } else {
+        track->head = track->tail = event;
+    }
+}
+
 /* meta-events have extra fields */
 static MfMeta *Mf_AllocMeta(uint32_t length)
 {
