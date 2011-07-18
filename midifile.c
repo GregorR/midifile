@@ -61,6 +61,10 @@ static uint32_t Mf_GetMidiBignumLength(uint32_t val);
     MIDI_READ_N(&(into), fh, 1); \
 } while (0)
 
+#define MIDI_UNREAD1(from, fh) do { \
+    if (ungetc((from), fh) == EOF) BAD_DATA; \
+} while (0)
+
 #define MIDI_READ2(into, fh) do { \
     unsigned char __mrbuf[2]; \
     MIDI_READ_N(__mrbuf, fh, 2); \
@@ -321,15 +325,16 @@ static PmError Mf_ReadMidiEvent(MfTrack *track, FILE *from, uint8_t *pstatus, ui
     MIDI_READ1(status, from);
     rd++;
 
-    /* hopefully it's a simple event */
+    /* get status and data1 directly (in case of using previous status) */
+    if (status < 0x80) {
+        /* status is from last event */
+        MIDI_UNREAD1(status, from); rd--;
+        status = *pstatus;
+    }
+
+    /* now figure the rest out */
     if (status < 0xF0) {
-        if (status < 0x80) {
-            /* status is from last event */
-            data1 = status;
-            status = *pstatus;
-        } else {
-            MIDI_READ1(data1, from); rd++;
-        }
+        MIDI_READ1(data1, from); rd++;
 
         /* not all have data2 (argh) */
         if (TYPE_HAS_DATA2(status)) {
@@ -367,12 +372,13 @@ static PmError Mf_ReadMidiEvent(MfTrack *track, FILE *from, uint8_t *pstatus, ui
         if (length >= 2) data2 = meta->data[1];
 
     } else {
-        fprintf(stderr, "Unrecognized MIDI event type %02X!\n", status);
+        fprintf(stderr, "Unrecognized input MIDI event type %02X!\n", status);
         BAD_DATA;
 
     }
 
     event->e.message = Pm_Message(status, data1, data2);
+    if (status == 0xFF && event->meta == NULL) fprintf(stderr, "WTF\n");
     *pstatus = status;
     *sz = rd;
     return pmNoError;
@@ -509,7 +515,7 @@ static PmError Mf_WriteMidiEvent(FILE *into, MfEvent *event, uint8_t *pstatus)
         fwrite(meta->data, 1, meta->length, into);
 
     } else {
-        fprintf(stderr, "Unrecognized MIDI event type %02X!\n", status);
+        fprintf(stderr, "Unrecognized output MIDI event type %02X!\n", status);
         BAD_DATA;
 
     }
@@ -555,7 +561,7 @@ static uint32_t Mf_GetMidiEventLength(MfEvent *event, uint8_t *pstatus)
         sz += meta->length;
 
     } else {
-        fprintf(stderr, "Unrecognized MIDI event type %02X!\n", status);
+        fprintf(stderr, "Unrecognized output MIDI event type %02X! (unknown length)\n", status);
         BAD_DATA;
 
     }
