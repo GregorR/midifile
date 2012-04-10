@@ -70,9 +70,14 @@
 
 #define MIDI_M_TEMPO_LENGTH 3
 #define MIDI_M_TEMPO_N(data) \
-    ((data[0] << 16) + \
-     (data[1] << 8) + \
-      data[2]);
+    (((data)[0] << 16) + \
+     ((data)[1] << 8) + \
+      (data)[2]);
+#define MIDI_M_TEMPO_N_SET(data, to) do { \
+    (data)[0] = ((to) >> 16) & 0xFF; \
+    (data)[1] = ((to) >> 8) & 0xFF; \
+    (data)[2] = (to) & 0xFF; \
+} while (0)
 
 #define MIDI_M_TIME_SIGNATURE_LENGTH 4
 #define MIDI_M_TIME_SIGNATURE_NUMERATOR(data) (data[0])
