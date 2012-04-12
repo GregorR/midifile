@@ -25,6 +25,7 @@
 
 #define Pm_MessageType(msg) (Pm_MessageStatus(msg)>>4)
 #define Pm_MessageChannel(msg) (Pm_MessageStatus(msg)&0xF)
+#define Pm_MessageStatusGen(type, chan) (((type)<<4)+(chan))
 
 /* event types */
 #define MIDI_NOTE_OFF               0x8
@@ -36,7 +37,7 @@
 #define MIDI_PITCH_BEND             0xE
 #define MIDI_META                   0xF
 
-/* status types (where applicable */
+/* status types (where applicable) */
 #define MIDI_STATUS_SYSEX           0xF0
 #define MIDI_STATUS_SYSEX_CONT      0xF7
 #define MIDI_STATUS_SYSEX_END       0xF7
